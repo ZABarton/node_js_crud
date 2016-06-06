@@ -112,4 +112,79 @@ router.route('/:id')
 		});
 	});
 
+router.route('/:id/edit')
+	.get(function(req, res) {
+		mongoose.model('Entry').findById(req.id, function(err, entry){
+			if (err) {
+				console.log('There was an error retrieving this entry');
+			} else {
+				var entrydate = entry.date.toISOString();
+				entrydate = entrydate.substring(0, entrydate.indexOf('T'))
+					res.format({
+						html: function(){
+							res.render('entries/edit', {
+								title: "Entry #" + entry._id,
+								"entrydate" : entrydate,
+								"entry" : entry
+							});
+						},
+						json: function(){
+							res.json(entry);
+						}
+					});				
+			}
+		});	
+	})
+	.put(function(req, res){
+		var author = req.body.author;
+		var postTitle = req.body.postTitle;
+		var postBody = req.body.postBody;
+		var date = req.body.date;
+		mongoose.model('Entry').findById(req.id, function (err, entry) {
+			entry.update({
+				author : author,
+				postTitle : postTitle,
+				postBody : postBody,
+				date : date
+			}, function (err, entryID) {
+				if (err) {
+					res.send("There was an error while updating information")
+				} else {
+					res.format({
+						html: function(){
+							res.redirect("/entries/" + entry._id)
+						},
+						json: function(){
+							res.json(entry);
+						}
+					});
+				}
+			})
+		});
+	})
+	.delete(function (req, res){
+		mongoose.model('Entry').findById(req.id, function (err, entry) {
+			if (err) {
+				return console.error(err);
+			} else {
+				entry.remove(function (err, entry){
+					if (err) {
+						return console.error(err);
+					} else {
+						res.format({
+							html: function(){
+								res.redirect("/entries");
+							},
+							json: function(){
+								res.json({message : 'deleted',
+									item : entry
+								});
+							}
+						});
+					}
+				});
+			}
+		});	
+	});
+	
 module.exports = router;
